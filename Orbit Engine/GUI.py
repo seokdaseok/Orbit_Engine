@@ -19,6 +19,7 @@ finished_run = False
 
 sim_time_step = 0.001
 sim_duration = 2.0
+sim_rtol = 1e-9
 
 # sim_time_step = 1000.0
 # sim_duration = 20.0
@@ -35,7 +36,7 @@ def run_simulation():
         csv_planet_button["state"] = "disabled"
         sim_settings_planet_button["state"] = "disabled"
 
-        run.set_conditions(sim_time_step, sim_duration)
+        run.set_conditions(sim_time_step, sim_duration, sim_rtol)
 
         t = threading.Thread(target=run.run_thing)
 
@@ -75,6 +76,8 @@ def config_sim_settings():
         sim_time_step = sim_settings[0]
         global sim_duration
         sim_duration = sim_settings[1]
+        global sim_rtol
+        sim_rtol = sim_settings[2]
 
         console_text_box_label.config(text="Simulation Settings Changed!")
     except ValueError:
@@ -142,14 +145,6 @@ root.title("Orbit Engine")
 
 # Set the window properties
 root.geometry("1920x1080")
-
-# Create the left frame for input (1/3 of the page)
-# left_frame = tk.Frame(root, bg=page_background_color, width=266, height=600)
-# left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-# # Create the right frame for the 3D plot (2/3 of the page)
-# right_frame = tk.Frame(root, width=534, height=600, bg=page_background_color)
-# right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
 root.grid_rowconfigure(0, weight=5)
 root.grid_rowconfigure(1, weight=1)
