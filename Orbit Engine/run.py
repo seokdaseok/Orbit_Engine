@@ -11,15 +11,17 @@ import initial as init
 
 
 _timeStep = 0.001
-duration = 6.34
+duration = 365
 
 t_eval_step = round(duration / _timeStep)
 
-run_time_taken = 0
-
 _rtol = 1e-9
 
+run_time_taken = 0
+
 planet_list_data = np.array([])
+
+planet_list_count = 0
 
 planet_position_data = np.array([])
 
@@ -32,6 +34,9 @@ def set_conditions(ts, dur, rtol):
 
     global _rtol
     _rtol = rtol
+
+    global t_eval_step
+    t_eval_step = round(duration / _timeStep)
 
 
 def run_thing():
@@ -57,16 +62,21 @@ def run_thing():
         ode_velocities = []
         ode_masses = []
 
-        print("List of Planets: ", planetsFinalList, "\n")
+        # print("List of Planets: ", planetsFinalList, "\n")
 
         for planet in planetsFinalList:
             ode_positions.append(planet[:3])
             ode_velocities.append(planet[3:6])
             ode_masses.append(planet[6])
 
+        global planet_list_count
+        planet_list_count = len(ode_masses)
+
         ode_positions = np.array(ode_positions)
         ode_velocities = np.array(ode_velocities)
         ode_masses = np.array(ode_masses)
+
+        print("Initial Positions: ", ode_positions)
 
         ODE.initial_pos = ode_positions
         ODE.initial_vel = ode_velocities
@@ -80,20 +90,36 @@ def run_thing():
         #print(solutions)
 
         N = len(ode_masses)
-        print("Solutions Shape: ", solutions.y.shape)
-        print("Solutions: ", solutions.y, "\n")
+        # print(N)
+        # print("Solutions Shape: ", solutions.y.shape)
+        # print("\n")
+        # print("Solutions: ", solutions.y, "\n")
+
+        #shape of the solutions are: planet 1: x,y,z,vx,vy,vz, planet 2: x,y,z,vx,vy,vz
 
         global planet_position_data
-        planet_position_data = solutions.y[:3*N].reshape((N, 3, -1))
 
-        print("Position Data: ", planet_position_data, "\n")
+        #num_planets = solutions.y.shape[0] // 6
+        timesteps = solutions.y.shape[1]
+
+        positions_a = solutions.y[:3*N].reshape((N, 3, -1))
+
+        data_reshape = solutions.y.reshape(N, 6, timesteps)
+
+        positions = data_reshape[:, :3, :]
+
+        #planet_position_data = positions.transpose(0, 2, 1)
+        planet_position_data = positions_a
+
+        # print(planet_position_data)
+
+        # print("\n")
 
         global run_time_taken
         run_time_taken = ODE.run_time_taken
 
 
 def get_results():
-
     global planet_position_data
     #planet_position_data = vV.position_results
     #planet_position_data = ode2b.planet_position_data

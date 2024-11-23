@@ -4,7 +4,9 @@ import matplotlib.pyplot as plt
 import time
 
 # Gaussian gravitational constant (in AU^3 / day^2 / solar_mass)
-k = 1
+#k = 1
+
+k = 0.01720209895
 
 initial_pos = np.array([])
 initial_vel = np.array([])
@@ -17,6 +19,8 @@ def n_body_equations_gaussian(t, y, masses):
     N = len(masses)
     positions = y[:3*N].reshape((N, 3))  # Position part of the state vector
     velocities = y[3*N:].reshape((N, 3))  # Velocity part of the state vector
+
+    #print("All Positions:", positions)
     
     accelerations = np.zeros_like(positions)
     
@@ -26,6 +30,8 @@ def n_body_equations_gaussian(t, y, masses):
             if i != j:
                 r_ij = positions[j] - positions[i]
                 distance = np.linalg.norm(r_ij)
+                #print("Vector: ", r_ij)
+                #sprint("Distance:", distance)
                 accelerations[i] += k**2 * masses[j] * r_ij / distance**3
     
     # Derivative of position is velocity, derivative of velocity is acceleration
@@ -40,6 +46,18 @@ def initial_conditions():
 
     #positions = initial_pos
     #velocities = initial_vel
+
+    ##OUTSIDE OF GUI TESTING
+
+    # positions = np.array([
+    #     [0, 0, 0],
+    #     [1, 0, 0] 
+    # ])
+    
+    # velocities = np.array([
+    #     [0, 0, 0],  
+    #     [0, 1, 0]  
+    # ])
     
     return initial_pos.flatten(), initial_vel.flatten()
     #return positions.flatten(), velocities.flatten()
@@ -52,6 +70,8 @@ def simulate_n_body_gaussian(t_span, rtol_val, t_eval=None):
     
     # Get predefined positions and velocities
     pos_init, vel_init = initial_conditions()
+
+    print("Initial Positions Again:", pos_init)
     
     # Combine the positions and velocities into one state vector
     y0 = np.concatenate((pos_init, vel_init))
@@ -90,3 +110,15 @@ def plot_orbits_gaussian(sol, masses):
     ax.set_xlim(-2, 2)
     ax.set_ylim(-2, 2)
     plt.show()
+
+##OUTSIDE OF GUI TESTING
+
+# masses = np.array([1.0, 3.003e-6])  # Sun, Earth, Mars in solar masses
+# t_span = (0, 6.34) 
+# t_eval = np.linspace(t_span[0], t_span[1], 1000)  # Time points to evaluate
+
+# # Simulate the orbits
+# sol = simulate_n_body_gaussian(t_span, 1e-8, t_eval)
+
+# # Plot the results
+# plot_orbits_gaussian(sol, masses)

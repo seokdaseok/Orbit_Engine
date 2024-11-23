@@ -8,6 +8,7 @@ from matplotlib.animation import FuncAnimation
 
 import run
 import initial
+import pullPlanets
 
 import time
 
@@ -17,9 +18,9 @@ import time
 
 finished_run = False
 
-sim_time_step = 0.001
-sim_duration = 2.0
-sim_rtol = 1e-9
+sim_time_step = 0.01 # 0.0001
+sim_duration = 365 
+sim_rtol = 1e-4 #1e-9
 
 # sim_time_step = 1000.0
 # sim_duration = 20.0
@@ -114,24 +115,52 @@ def plot_results_method():
 
         ax.clear()
 
+        N = run.planet_list_count
+
+        for i in range(N):
+
+            ax.plot(run.planet_position_data[i, 0, ::25], run.planet_position_data[i, 1, ::25], run.planet_position_data[i, 2, ::25])
+
+
+        ax.set_xlim(-2, 2)
+        ax.set_ylim(-2, 2)
+        ax.set_zlim(-2, 2)
+
+        # ax.set_xlim(-0.004, 0.004)
+        # ax.set_ylim(-0.004, 0.004)
+        # ax.set_zlim(-0.004, 0.004)
+
         ax.set_aspect('equal')
 
-        ax.set_xlim(-1, 1)
-        ax.set_ylim(-1, 1)
+        # for planet_positions in run.planet_position_data:
+        #     x_cords = planet_positions[:, 0]
+        #     y_cords = planet_positions[:, 1]
+        #     z_cords = planet_positions[:, 2]
 
+        #     print(x_cords)
 
-        for planet_positions in run.planet_position_data:
-            x_cords = planet_positions[:, 0]
-            y_cords = planet_positions[:, 1]
-            z_cords = planet_positions[:, 2]
-
-            ax.plot(x_cords, y_cords, z_cords)
+        #     ax.plot(x_cords, y_cords, z_cords)
             
         canvas.draw()
         console_text_box_label.config(text="Successfully plotted!")
 
     else:
         console_text_box_label.config(text="No Position Data yet.")
+
+def pull_planets_method():
+    directory_to_planets = csv_text_box.get("1.0", tk.END).strip()
+
+    initial.listOfPlanetsInScene = pullPlanets.pull_planets(directory_to_planets)
+
+    console_text_box_label.config(text="Successfully added csv planets to simulation")
+
+def save_planets_to_csv_method():
+    directory_to_planets = csv_text_box.get("1.0", tk.END).strip()
+
+    pullPlanets.create_planet_csv(initial.listOfPlanetsInScene, directory_to_planets)
+
+    console_text_box_label.config(text="Successfully added simulation planets to csv")
+
 
 
 page_background_color = "#E3E1D9"
@@ -217,7 +246,7 @@ position_text_box.insert(tk.END, "Input position vector in the form x,y,z")
 
 
 ##velocity textbox stuff
-velocity_text_box_label = tk.Label(left_frame, text="Velocity (AU/Gaussian Day)", font=('Callibri', 12, 'bold'), pady=3, bg=page_background_color)
+velocity_text_box_label = tk.Label(left_frame, text="Velocity (AU/Day)", font=('Callibri', 12, 'bold'), pady=3, bg=page_background_color)
 velocity_text_box_label.pack(side=tk.TOP, fill=tk.X)
 
 velocity_text_box = tk.Text(master=left_frame, height=1.5, width=25, bg=input_background_color, bd=0)
@@ -255,16 +284,30 @@ csv_text_box_label.pack(side=tk.TOP, fill=tk.X)
 
 csv_text_box = tk.Text(master=left_frame, height=1.5, width=25, bg=input_background_color, bd=0)
 csv_text_box.pack(fill=tk.BOTH, expand=False, padx=50, pady=10)
-csv_text_box.insert(tk.END, "Input the Directory of your CSV File to insert Planet Data")
+csv_text_box.insert(tk.END, "earth_moon.csv")
 
 csv_planet_button = tk.Button(
     master=left_frame,
     text="Pull Planets from CSV",
-    command=button_click_test,
+    command=pull_planets_method,
     font=("Callibri", 12, 'bold'),
     width=20,
     height=1,
     bg="#9CDBA6", ##Pale Green Color
+    bd=2,
+    relief=tk.SOLID
+)
+
+csv_planet_button.pack(side=tk.TOP, padx=15, pady=15)
+
+csv_planet_button = tk.Button(
+    master=left_frame,
+    text="Add Planets to CSV",
+    command=save_planets_to_csv_method,
+    font=("Callibri", 12, 'bold'),
+    width=20,
+    height=1,
+    bg="#A6AEBF", ##Pale Green Color
     bd=2,
     relief=tk.SOLID
 )
