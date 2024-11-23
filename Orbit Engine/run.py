@@ -25,6 +25,8 @@ planet_list_count = 0
 
 planet_position_data = np.array([])
 
+largest_dist = 1
+
 def set_conditions(ts, dur, rtol):
     global _timeStep
     _timeStep = ts
@@ -82,10 +84,16 @@ def run_thing():
         ODE.initial_vel = ode_velocities
         ODE.masses = ode_masses
 
+        global largest_dist
+
+        largest_dist = ODE.find_largest_distance()
+
         ode_t_span = (0, duration)
         ode_t_eval = np.linspace(ode_t_span[0], ode_t_span[1], t_eval_step)
 
         solutions = ODE.simulate_n_body_gaussian(ode_t_span, _rtol, ode_t_eval)
+
+        largest_dist *= (1.496e11/ODE.nu)
 
         #print(solutions)
 

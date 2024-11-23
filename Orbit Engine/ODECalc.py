@@ -8,11 +8,49 @@ import time
 
 k = 0.01720209895
 
+#Universal Gravitational Constant
+
+big_G = 6.674010551359e-11
+m_sol = 1.988416e30 #kgs
+day_in_secs = 86400 #seconds
+
+
 initial_pos = np.array([])
 initial_vel = np.array([])
 masses = np.array([])
 
 run_time_taken = 0
+
+def find_shortest_distances():
+    #shortest_distance = 1e50
+
+    n = initial_pos.shape[0]
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            if i == 0 and j == 1:
+                shortest_distance = np.linalg.norm(initial_pos[i] - initial_pos[j])
+            else:
+                distance = np.linalg.norm(initial_pos[i] - initial_pos[j])
+                
+                if (distance < shortest_distance):
+                    shortest_distance = distance
+
+    return shortest_distance
+
+def find_largest_distance():
+    largest_distance = 1
+
+    n = initial_pos.shape[0]
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            distance = np.linalg.norm(initial_pos[i] - initial_pos[j])
+
+            if (distance > largest_distance):
+                largest_distance = distance
+
+    return largest_distance
 
 # Function to compute the derivatives using the Gaussian gravitational constant
 def n_body_equations_gaussian(t, y, masses):
@@ -32,7 +70,10 @@ def n_body_equations_gaussian(t, y, masses):
                 distance = np.linalg.norm(r_ij)
                 #print("Vector: ", r_ij)
                 #sprint("Distance:", distance)
-                accelerations[i] += k**2 * masses[j] * r_ij / distance**3
+                normalization_factor = (1 / nu**3) * m_sol * day_in_secs**2
+                accelerations[i] += big_G * masses[j] / (distance**3) * r_ij * normalization_factor
+
+                #accelerations[i] += (k**2 / normalized_dist**3) * masses[j] * r_ij / distance**3
     
     # Derivative of position is velocity, derivative of velocity is acceleration
     derivatives = np.concatenate((velocities.flatten(), accelerations.flatten()))
@@ -43,6 +84,22 @@ def initial_conditions():
 
     global initial_pos
     global initial_vel
+
+    #convert from AU to meters
+
+    initial_pos = initial_pos * 1.496e11
+
+    #convert from AU/Day to meters / day
+
+    initial_vel = initial_vel * 1.496e+11
+
+    ##normalization code
+    global nu
+    nu = find_shortest_distances()
+
+    initial_pos = initial_pos / nu
+
+    initial_vel = initial_vel / nu
 
     #positions = initial_pos
     #velocities = initial_vel
@@ -71,7 +128,7 @@ def simulate_n_body_gaussian(t_span, rtol_val, t_eval=None):
     # Get predefined positions and velocities
     pos_init, vel_init = initial_conditions()
 
-    print("Initial Positions Again:", pos_init)
+    print("Normalized:", pos_init)
     
     # Combine the positions and velocities into one state vector
     y0 = np.concatenate((pos_init, vel_init))

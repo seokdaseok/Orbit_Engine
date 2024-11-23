@@ -18,9 +18,9 @@ import time
 
 finished_run = False
 
-sim_time_step = 0.01 # 0.0001
+sim_time_step = 0.0001 # 0.0001
 sim_duration = 365 
-sim_rtol = 1e-4 #1e-9
+sim_rtol = 1e-9 #1e-9
 
 # sim_time_step = 1000.0
 # sim_duration = 20.0
@@ -122,13 +122,19 @@ def plot_results_method():
             ax.plot(run.planet_position_data[i, 0, ::25], run.planet_position_data[i, 1, ::25], run.planet_position_data[i, 2, ::25])
 
 
-        ax.set_xlim(-2, 2)
-        ax.set_ylim(-2, 2)
-        ax.set_zlim(-2, 2)
+        graph_dist = run.largest_dist * 1.1
+        
+        ax.set_xlim(-graph_dist, graph_dist)
+        ax.set_ylim(-graph_dist, graph_dist)
+        ax.set_zlim(-graph_dist, graph_dist)
 
         # ax.set_xlim(-0.004, 0.004)
         # ax.set_ylim(-0.004, 0.004)
         # ax.set_zlim(-0.004, 0.004)
+
+        # ax.set_xlim(-2, 2)
+        # ax.set_ylim(-2, 2)
+        # ax.set_zlim(-2, 2)
 
         ax.set_aspect('equal')
 
