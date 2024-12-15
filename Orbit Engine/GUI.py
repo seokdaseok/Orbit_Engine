@@ -125,7 +125,7 @@ def plot_results_method():
 
             nth = int((1 / sim_time_step) / 25)
 
-            ax.plot(run.planet_position_data[i, 0, ::nth], run.planet_position_data[i, 1, ::nth], run.planet_position_data[i, 2, ::nth], "*", label=masses[i])
+            ax.plot(run.planet_position_data[i, 0, ::nth], run.planet_position_data[i, 1, ::nth], run.planet_position_data[i, 2, ::nth], "-", label=masses[i])
 
 
         graph_dist = run.largest_dist * 1.1
@@ -203,6 +203,65 @@ def save_orbits_to_csv_method():
 
         console_text_box_label.config(text="Successfully saved data!")
 
+def animate_results():
+    if len(run.planet_position_data) == 0:
+        console_text_box_label.config(text="No Position Data yet. Run a simulation first!")
+        return
+
+    # Clear the current plot
+    ax.clear()
+    ax.set_title('Simulation Space')
+
+    graph_dist = run.largest_dist * 1.1
+    ax.set_xlim(-graph_dist, graph_dist)
+    ax.set_ylim(-graph_dist, graph_dist)
+    ax.set_zlim(-graph_dist, graph_dist)
+    ax.set_aspect('auto')
+
+    # Prepare data for animation
+    planet_positions = run.planet_position_data  # Shape: (N, 3, time_steps)
+    nth = int(1 / sim_time_step)  # Subsample factor
+    subsampled_positions = planet_positions[:, :, ::nth]  # Take every nth frame
+    num_frames = subsampled_positions.shape[2]  # Number of frames after subsampling
+    num_planets = subsampled_positions.shape[0]
+
+    # Get planet masses (assuming the masses are stored in the same order)
+    masses = [float(planet[6]) for planet in initial.listOfPlanetsInScene]
+
+    # Initialize trails, spheres, labels for each planet, and a time label
+    trails = [ax.plot([], [], [], "-")[0] for i in range(num_planets)]
+    spheres = [ax.scatter([], [], [], s=100, label=f"Mass: {masses[i]:.2e} M☉") for i in range(num_planets)]
+    labels = [ax.text(0, 0, 0, f"{masses[i]:.2e} M☉", color="black") for i in range(num_planets)]
+    time_label = ax.text2D(0.05, 0.95, "", transform=ax.transAxes, fontsize=12, color="black")
+
+    def update(frame):
+        t = frame + 1  # Time starts at t=1
+        time_label.set_text(f"Time: {t}")
+
+        for i, (trail, sphere, label) in enumerate(zip(trails, spheres, labels)):
+            # Get current and trail data
+            x_trail, y_trail, z_trail = subsampled_positions[i, :, :frame]
+            x_current, y_current, z_current = subsampled_positions[i, :, frame - 1]
+
+            # Update the trail
+            trail.set_data(x_trail, y_trail)
+            trail.set_3d_properties(z_trail)
+
+            # Update the sphere
+            sphere._offsets3d = ([x_current], [y_current], [z_current])
+
+            # Update the label
+            label.set_position((x_current, y_current))
+            label.set_3d_properties(z_current)
+            label.set_text(f"{masses[i]:.2e} M☉")
+        return trails + spheres + labels + [time_label]
+
+    # Create the animation
+    ani = FuncAnimation(fig, update, frames=num_frames, interval=50, blit=False)
+
+    ax.legend()
+    canvas.draw()
+    console_text_box_label.config(text="Animation Complete!")
 
 
 
@@ -467,7 +526,7 @@ show_button.pack(fill=tk.Y, padx=65, pady=15)
 animate_button = tk.Button(
     master=bottom_frame_right, 
     text="Animate Results", 
-    command=button_click_test, 
+    command=animate_results, 
     font=("Callibri", 18, 'bold'),
     width=40, 
     height=3, 
