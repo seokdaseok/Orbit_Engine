@@ -4,7 +4,9 @@ import threading
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 from matplotlib.animation import FuncAnimation
+import numpy as np
 
 import run
 import initial
@@ -113,13 +115,17 @@ def plot_results_method():
 
     if len(run.planet_position_data) >= 1:
 
+        masses = np.array(initial.listOfPlanetsInScene)[:,6] #TO DO: assuming that this is in the same order as planet position data, need to check later
+
         ax.clear()
 
         N = run.planet_list_count
 
         for i in range(N):
 
-            ax.plot(run.planet_position_data[i, 0, ::25], run.planet_position_data[i, 1, ::25], run.planet_position_data[i, 2, ::25])
+            nth = int((1 / sim_time_step) / 25)
+
+            ax.plot(run.planet_position_data[i, 0, ::nth], run.planet_position_data[i, 1, ::nth], run.planet_position_data[i, 2, ::nth], "*", label=masses[i])
 
 
         graph_dist = run.largest_dist * 1.1
@@ -146,6 +152,8 @@ def plot_results_method():
         #     print(x_cords)
 
         #     ax.plot(x_cords, y_cords, z_cords)
+
+        ax.legend()
             
         canvas.draw()
         console_text_box_label.config(text="Successfully plotted!")
@@ -167,6 +175,36 @@ def save_planets_to_csv_method():
 
     console_text_box_label.config(text="Successfully added simulation planets to csv")
 
+def save_orbits_to_csv_method():
+
+    masses = np.array(initial.listOfPlanetsInScene)[:,6]
+
+    nth = int(1 / sim_time_step)
+    print("Nth:", nth)
+
+    the_position_data = run.planet_position_data * (run.ODE.nu /1.496e11) #position
+    the_velocity_data = run.planet_velocity_data * (run.ODE.nu /1.496e11) #velocity
+
+    if(the_position_data.size == 0):
+        console_text_box_label.config(text="No orbit data yet")
+    else:
+        #print(the_data)
+
+        the_directory = save_data_text_box.get("1.0", tk.END).strip()
+
+        print("Shape of Data Array:", the_position_data.shape[0])
+        for i in range(the_position_data.shape[0]):
+            real_directory = the_directory[:-4] + "_" + str(masses[i]) + "_M_sun.csv"
+            print("The Directory", real_directory)
+            the_real_data = np.concatenate((the_position_data[i, :, ::nth], the_velocity_data[i, :, ::nth])).T #np.transpose(the_data[i, 0:6, ::nth])
+            
+            print("Shape of the real data:", the_real_data.shape)
+            np.savetxt(real_directory, the_real_data, delimiter=",")
+
+        console_text_box_label.config(text="Successfully saved data!")
+
+
+
 
 
 page_background_color = "#E3E1D9"
@@ -179,7 +217,7 @@ root = tk.Tk()
 root.title("Orbit Engine")
 
 # Set the window properties
-root.geometry("1920x1080")
+root.geometry("1920x1200")
 
 root.grid_rowconfigure(0, weight=5)
 root.grid_rowconfigure(1, weight=1)
@@ -216,7 +254,6 @@ bottom_frame_center.grid(row=1, column=1, sticky="nsew")
 bottom_frame_right = tk.Frame(bottom_frame, bg=bottom_page_background_color)
 bottom_frame_right.grid(row=1, column=2, sticky="nsew")
 
-
 # Create a figure for the 3D plot
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
@@ -230,8 +267,17 @@ title_label.pack(side=tk.TOP, fill=tk.X)
 
 # Embed the plot in the Tkinter window
 canvas = FigureCanvasTkAgg(fig, master=right_frame)
-canvas.draw()
+
 canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+toolbar = NavigationToolbar2Tk(canvas)
+toolbar.configure(background='white')
+toolbar.update()
+toolbar.pack(side=tk.BOTTOM, fill=tk.X)
+
+fig.tight_layout()
+
+canvas.draw()
 
 ##Using the Orbit Engine
 ##instructionsText = """Orbit Engine is a tool developed to simulate and graph orbital mechanics easily. \n \n Features:\n \n Generate planets manually, Add planets with CSV, Swap between Basic and ODE, Change time step, Change Duration, Save Data of Orbits, Save data of Initial Conditions, Plot Results from Previous, Plot Results from CSV Saved, Animate Results from Previous, Animate Results from CSV"""
@@ -327,7 +373,7 @@ sim_settings_text_box_label.pack(side=tk.TOP, fill=tk.X)
 
 sim_settings_text_box = tk.Text(master=left_frame, height=1.5, width=25, bg=input_background_color, bd=0)
 sim_settings_text_box.pack(fill=tk.BOTH, expand=False, padx=50, pady=10)
-sim_settings_text_box.insert(tk.END, "Input simulation settings in this form: time step,duration")
+sim_settings_text_box.insert(tk.END, "Input simulation settings in this form: time step, duration, rtol")
 
 sim_settings_planet_button = tk.Button(
     master=left_frame,
@@ -343,12 +389,19 @@ sim_settings_planet_button = tk.Button(
 
 sim_settings_planet_button.pack(side=tk.TOP, padx=15, pady=15)
 
-##reset button
+##save planet data to csv
 
-reset_settings_planet_button = tk.Button(
+sim_save_data_text_box_label = tk.Label(left_frame, text="Save Orbit Data to CSV", font=('Callibri', 12, 'bold'), pady=3, bg=page_background_color)
+sim_save_data_text_box_label.pack(side=tk.TOP, fill=tk.X)
+
+save_data_text_box = tk.Text(master=left_frame, height=1.5, width=25, bg=input_background_color, bd=0)
+save_data_text_box.pack(fill=tk.BOTH, expand=False, padx=50, pady=10)
+save_data_text_box.insert(tk.END, "orbit_data.csv")
+
+save_data_button = tk.Button(
     master=left_frame,
-    text="Reset Simulation",
-    command=reset_simulation_method,
+    text="Save Orbit Data",
+    command=save_orbits_to_csv_method,
     font=("Callibri", 12, 'bold'),
     width=30,
     height=1,
@@ -357,7 +410,24 @@ reset_settings_planet_button = tk.Button(
     relief=tk.SOLID
 )
 
-reset_settings_planet_button.pack(side=tk.TOP, padx=15, pady=15)
+save_data_button.pack(side=tk.TOP, padx=15, pady=15)
+
+
+##reset button
+
+# reset_settings_planet_button = tk.Button(
+#     master=left_frame,
+#     text="Reset Simulation",
+#     command=reset_simulation_method,
+#     font=("Callibri", 12, 'bold'),
+#     width=30,
+#     height=1,
+#     bg="#C5705D", ##Pale Green Color
+#     bd=2,
+#     relief=tk.SOLID
+# )
+
+# reset_settings_planet_button.pack(side=tk.TOP, padx=15, pady=15)
 
 ##console stuff
 

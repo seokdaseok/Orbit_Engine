@@ -150,7 +150,7 @@ def plot_orbits_gaussian(sol, masses):
     N = len(masses)
     
     # Extract the positions from the solution
-    positions = sol.y[:3*N].reshape((N, 3, -1))  # (N bodies, 3 dimensions, time steps)
+    positions = sol.y[:3*N].reshape((N, 6, -1))  # (N bodies, 3 dimensions, time steps)
 
     print(positions)
     

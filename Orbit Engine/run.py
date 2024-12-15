@@ -24,6 +24,7 @@ planet_list_data = np.array([])
 planet_list_count = 0
 
 planet_position_data = np.array([])
+planet_velocity_data = np.array([])
 
 largest_dist = 1
 
@@ -99,7 +100,7 @@ def run_thing():
 
         N = len(ode_masses)
         # print(N)
-        # print("Solutions Shape: ", solutions.y.shape)
+        #print("Solutions Shape: ", solutions.y.shape)
         # print("\n")
         # print("Solutions: ", solutions.y, "\n")
 
@@ -107,17 +108,25 @@ def run_thing():
 
         global planet_position_data
 
+        global planet_velocity_data
+
         #num_planets = solutions.y.shape[0] // 6
         timesteps = solutions.y.shape[1]
 
+        print("Solutions.Y:", solutions.y[:3*N])
+        print("Solutions Shape: ", solutions.y[:3*N].shape)
+
         positions_a = solutions.y[:3*N].reshape((N, 3, -1))
 
-        data_reshape = solutions.y.reshape(N, 6, timesteps)
+        velocities_a = solutions.y[3*N:].reshape((N, 3, -1))
 
-        positions = data_reshape[:, :3, :]
+        # data_reshape = solutions.y.reshape(N, 3, timesteps)
+
+        # positions = data_reshape[:, :3, :]
 
         #planet_position_data = positions.transpose(0, 2, 1)
         planet_position_data = positions_a
+        planet_velocity_data = velocities_a
 
         # print(planet_position_data)
 
