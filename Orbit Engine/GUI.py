@@ -24,6 +24,10 @@ sim_time_step = 0.0001 # 0.0001
 sim_duration = 365 
 sim_rtol = 1e-9 #1e-9
 
+animation_interval = 50
+
+animation_splice_factor = 1
+
 # sim_time_step = 1000.0
 # sim_duration = 20.0
 
@@ -89,7 +93,7 @@ def config_sim_settings():
         console_text_box_label.config(text="Value Error! Make sure the inputted format is correct")
 
 def reset_simulation_method():
-    initial.listOfPlanetsInScene.clear()
+    initial.listOfPlanetsInScene = []
 
     ##print(initial.listOfPlanetsInScene)
 
@@ -203,7 +207,27 @@ def save_orbits_to_csv_method():
 
         console_text_box_label.config(text="Successfully saved data!")
 
+def change_frame_rate():
+    animation_settigns_string = animation_settings_text_box.get("1.0", tk.END).strip()
+
+    try:
+        animation_settings = [float(x) for x in animation_settigns_string.split(',')]
+        frame_duration = animation_settings[0]
+        splice_factor = animation_settings[1]
+
+        global animation_interval
+        global animation_splice_factor
+
+        animation_interval = frame_duration
+        animation_splice_factor = splice_factor
+
+        console_text_box_label.config(text="Sucessfully Changed Animation Settings!")
+    except TypeError:
+        console_text_box_label.config(text="Value Error. Make sure you are inputting the values in the correct format")
+
 def animate_results():
+    global animation_splice_factor
+
     if len(run.planet_position_data) == 0:
         console_text_box_label.config(text="No Position Data yet. Run a simulation first!")
         return
@@ -220,7 +244,7 @@ def animate_results():
 
     # Prepare data for animation
     planet_positions = run.planet_position_data  # Shape: (N, 3, time_steps)
-    nth = int(1 / sim_time_step)  # Subsample factor
+    nth = int(1 / (sim_time_step * animation_splice_factor))  # Subsample factor
     subsampled_positions = planet_positions[:, :, ::nth]  # Take every nth frame
     num_frames = subsampled_positions.shape[2]  # Number of frames after subsampling
     num_planets = subsampled_positions.shape[0]
@@ -235,7 +259,7 @@ def animate_results():
     time_label = ax.text2D(0.05, 0.95, "", transform=ax.transAxes, fontsize=12, color="black")
 
     def update(frame):
-        t = frame + 1  # Time starts at t=1
+        t = (frame + 1) / animation_splice_factor  # Time starts at t=1
         time_label.set_text(f"Time: {t}")
 
         for i, (trail, sphere, label) in enumerate(zip(trails, spheres, labels)):
@@ -257,7 +281,7 @@ def animate_results():
         return trails + spheres + labels + [time_label]
 
     # Create the animation
-    ani = FuncAnimation(fig, update, frames=num_frames, interval=50, blit=False)
+    ani = FuncAnimation(fig, update, frames=num_frames, interval=animation_interval, blit=False)
 
     ax.legend()
     canvas.draw()
@@ -351,25 +375,25 @@ instruction_text_box.tag_add('center', '1.0', 'end')
 position_text_box_label = tk.Label(left_frame, text="Position (AU)", font=('Callibri', 12, 'bold'), pady=3, bg=page_background_color)
 position_text_box_label.pack(side=tk.TOP, fill=tk.X)
 
-position_text_box = tk.Text(master=left_frame, height=1.5, width=25, bg=input_background_color, bd=0)
+position_text_box = tk.Text(master=left_frame, height=1.2, width=25, bg=input_background_color, bd=0)
 position_text_box.pack(fill=tk.BOTH, expand=False, padx=50, pady=10)
-position_text_box.insert(tk.END, "Input position vector in the form x,y,z")
+position_text_box.insert(tk.END, "x,y,z")
 
 
 ##velocity textbox stuff
 velocity_text_box_label = tk.Label(left_frame, text="Velocity (AU/Day)", font=('Callibri', 12, 'bold'), pady=3, bg=page_background_color)
 velocity_text_box_label.pack(side=tk.TOP, fill=tk.X)
 
-velocity_text_box = tk.Text(master=left_frame, height=1.5, width=25, bg=input_background_color, bd=0)
+velocity_text_box = tk.Text(master=left_frame, height=1.2, width=25, bg=input_background_color, bd=0)
 velocity_text_box.pack(fill=tk.BOTH, expand=False, padx=50, pady=10)
-velocity_text_box.insert(tk.END, "Input velocity vector in the form x,y,z")
+velocity_text_box.insert(tk.END, "x,y,z")
 
 
 ##mass textbox stuff
 mass_text_box_label = tk.Label(left_frame, text="Mass (Solar Masses)", font=('Callibri', 12, 'bold'), pady=3, bg=page_background_color)
 mass_text_box_label.pack(side=tk.TOP, fill=tk.X)
 
-mass_text_box = tk.Text(master=left_frame, height=1.5, width=25, bg=input_background_color, bd=0)
+mass_text_box = tk.Text(master=left_frame, height=1.2, width=25, bg=input_background_color, bd=0)
 mass_text_box.pack(fill=tk.BOTH, expand=False, padx=50, pady=10)
 mass_text_box.insert(tk.END, "Input mass of planet relative to solar masses (mass of the sun = 1)")
 
@@ -393,7 +417,7 @@ generate_planet_button.pack(side=tk.TOP, padx=15, pady=15)
 csv_text_box_label = tk.Label(left_frame, text="Add Planets from CSV", font=('Callibri', 12, 'bold'), pady=3, bg=page_background_color)
 csv_text_box_label.pack(side=tk.TOP, fill=tk.X)
 
-csv_text_box = tk.Text(master=left_frame, height=1.5, width=25, bg=input_background_color, bd=0)
+csv_text_box = tk.Text(master=left_frame, height=1.2, width=25, bg=input_background_color, bd=0)
 csv_text_box.pack(fill=tk.BOTH, expand=False, padx=50, pady=10)
 csv_text_box.insert(tk.END, "earth_moon.csv")
 
@@ -427,12 +451,12 @@ csv_planet_button.pack(side=tk.TOP, padx=15, pady=15)
 
 ##Configure Simulation Settings
 
-sim_settings_text_box_label = tk.Label(left_frame, text="Configure Simulation Settings", font=('Callibri', 12, 'bold'), pady=3, bg=page_background_color)
+sim_settings_text_box_label = tk.Label(left_frame, text="Configure Simulation Settings (input: time step, duration, rtol)", font=('Callibri', 12, 'bold'), pady=3, bg=page_background_color)
 sim_settings_text_box_label.pack(side=tk.TOP, fill=tk.X)
 
-sim_settings_text_box = tk.Text(master=left_frame, height=1.5, width=25, bg=input_background_color, bd=0)
+sim_settings_text_box = tk.Text(master=left_frame, height=1.2, width=25, bg=input_background_color, bd=0)
 sim_settings_text_box.pack(fill=tk.BOTH, expand=False, padx=50, pady=10)
-sim_settings_text_box.insert(tk.END, "Input simulation settings in this form: time step, duration, rtol")
+sim_settings_text_box.insert(tk.END, "time step, duration, rtol")
 
 sim_settings_planet_button = tk.Button(
     master=left_frame,
@@ -453,7 +477,7 @@ sim_settings_planet_button.pack(side=tk.TOP, padx=15, pady=15)
 sim_save_data_text_box_label = tk.Label(left_frame, text="Save Orbit Data to CSV", font=('Callibri', 12, 'bold'), pady=3, bg=page_background_color)
 sim_save_data_text_box_label.pack(side=tk.TOP, fill=tk.X)
 
-save_data_text_box = tk.Text(master=left_frame, height=1.5, width=25, bg=input_background_color, bd=0)
+save_data_text_box = tk.Text(master=left_frame, height=1.2, width=25, bg=input_background_color, bd=0)
 save_data_text_box.pack(fill=tk.BOTH, expand=False, padx=50, pady=10)
 save_data_text_box.insert(tk.END, "orbit_data.csv")
 
@@ -471,22 +495,42 @@ save_data_button = tk.Button(
 
 save_data_button.pack(side=tk.TOP, padx=15, pady=15)
 
+animation_settings_label = tk.Label(left_frame, text="Configure Animation Settings (input: frame duration, splice_factor)", font=('Callibri', 12, 'bold'), pady=3, bg=page_background_color)
+animation_settings_label.pack(side=tk.TOP, fill=tk.X)
 
-##reset button
+animation_settings_text_box = tk.Text(master=left_frame, height=1.2, width=25, bg=input_background_color, bd=0)
+animation_settings_text_box.pack(fill=tk.BOTH, expand=False, padx=50, pady=10)
+animation_settings_text_box.insert(tk.END, "50, 1")
 
-# reset_settings_planet_button = tk.Button(
-#     master=left_frame,
-#     text="Reset Simulation",
-#     command=reset_simulation_method,
-#     font=("Callibri", 12, 'bold'),
-#     width=30,
-#     height=1,
-#     bg="#C5705D", ##Pale Green Color
-#     bd=2,
-#     relief=tk.SOLID
-# )
+animation_settings_button = tk.Button(
+    master=left_frame,
+    text="Configure Animation Settings",
+    command=change_frame_rate,
+    font=("Callibri", 12, 'bold'),
+    width=30,
+    height=1,
+    bg="#5DB996", ##Pale Green Color
+    bd=2,
+    relief=tk.SOLID
+)
 
-# reset_settings_planet_button.pack(side=tk.TOP, padx=15, pady=15)
+animation_settings_button.pack(side=tk.TOP, padx=15, pady=15)
+
+#reset button
+
+reset_settings_planet_button = tk.Button(
+    master=left_frame,
+    text="Reset Simulation",
+    command=reset_simulation_method,
+    font=("Callibri", 12, 'bold'),
+    width=30,
+    height=1,
+    bg="#D6CFB4", ##Pale Green Color
+    bd=2,
+    relief=tk.SOLID
+)
+
+reset_settings_planet_button.pack(side=tk.TOP, padx=15, pady=15)
 
 ##console stuff
 

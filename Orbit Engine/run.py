@@ -79,7 +79,7 @@ def run_thing():
         ode_velocities = np.array(ode_velocities)
         ode_masses = np.array(ode_masses)
 
-        print("Initial Positions: ", ode_positions)
+        ##print("Initial Positions: ", ode_positions)
 
         ODE.initial_pos = ode_positions
         ODE.initial_vel = ode_velocities
@@ -113,8 +113,8 @@ def run_thing():
         #num_planets = solutions.y.shape[0] // 6
         timesteps = solutions.y.shape[1]
 
-        print("Solutions.Y:", solutions.y[:3*N])
-        print("Solutions Shape: ", solutions.y[:3*N].shape)
+        ##print("Solutions.Y:", solutions.y[:3*N])
+        ##print("Solutions Shape: ", solutions.y[:3*N].shape)
 
         positions_a = solutions.y[:3*N].reshape((N, 3, -1))
 

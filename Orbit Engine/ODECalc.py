@@ -128,7 +128,7 @@ def simulate_n_body_gaussian(t_span, rtol_val, t_eval=None):
     # Get predefined positions and velocities
     pos_init, vel_init = initial_conditions()
 
-    print("Normalized:", pos_init)
+    ##print("Normalized:", pos_init)
     
     # Combine the positions and velocities into one state vector
     y0 = np.concatenate((pos_init, vel_init))
