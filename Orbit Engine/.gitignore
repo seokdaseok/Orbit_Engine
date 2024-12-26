@@ -1,0 +1,9 @@
+# Ignore the DS_store for MacOS
+.DS_store
+
+
+#Ignore all text files
+*.txt
+
+#Ignore all csv files
+*.csv
