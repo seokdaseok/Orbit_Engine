@@ -1,4 +1,4 @@
-Orbit Simulator! This package is intended to be easy to use by all. It uses ordinary differential equations (ODE's) to predict the orbital paths of any object with specified initial conditions. 
+Orbit Engine Simulator! This package is intended to be easy to use by all. It uses ordinary differential equations (ODE's) to predict the orbital paths of any object with specified initial conditions. 
 
 The GUI (frontend):
 - How to use (e.g. format of initial conditions and other things that must be specified)...
@@ -11,9 +11,9 @@ The solver (backend):
 - optimizations done and things you considered (e.g. the solver normalizes with the smallest distance between objects, to prevent numerical instability) 
 
 Dependencies:
-- What non-default (I'd say anything not default to miniconda) packages must be installed for the package to work
-
-TODOs:
-- Issues you know about or things you want to add, that you haven't gotten to yet
+- numpy
+- matplotlib
+- scipy
+- customtkinter
 
 
