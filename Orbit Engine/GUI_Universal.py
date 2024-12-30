@@ -26,6 +26,8 @@ animation_interval = 50
 
 animation_splice_factor = 1
 
+tracked_planet_index = -1
+
 def run_simulation():
 
     #print("hi")
@@ -68,6 +70,10 @@ def schedule_check(t):
     root.after(500, check_if_done, t)
 
 def plot_results_method():
+
+    ax.clear()
+    global tracked_planet_index
+    tracked_planet_index = -1
     run.get_results()
 
     if len(run.planet_position_data) >= 1:
@@ -101,7 +107,33 @@ def plot_results_method():
     else:
         console_text_box_label.configure(text="No Position Data yet.")
 
+def toggle_track_planet():
+    global tracked_planet_index
+
+    if len(run.planet_position_data) == 0:
+        console_text_box_label.configure(text="No Position Data yet. Run a simulation first!")
+        return
+
+    num_planets = len(run.planet_position_data)
+    tracked_planet_index = (tracked_planet_index + 1)  # Cycle through planets and wide view
+
+    if(tracked_planet_index == num_planets):
+        tracked_planet_index = -1
+
+    masses = [float(planet[6]) for planet in initial.listOfPlanetsInScene]
+
+    if tracked_planet_index == -1:  # Wide view
+        console_text_box_label.configure(text="Currently in wide view.")
+    else:  # Following a specific planet
+        console_text_box_label.configure(text=f"Currently following: {masses[tracked_planet_index]:.2e} M\u2609")
+
 def animate_results():
+    ax.clear()
+    
+
+    global tracked_planet_index
+    tracked_planet_index = -1
+
     global animation_splice_factor
 
     if len(run.planet_position_data) == 0:
@@ -109,10 +141,10 @@ def animate_results():
         return
 
     # Clear the current plot
-    ax.clear()
-    ax.set_title('Simulation Space')
+    #ax.set_title('Simulation Space')
 
     graph_dist = run.largest_dist * 1.1
+
     ax.set_xlim(-graph_dist, graph_dist)
     ax.set_ylim(-graph_dist, graph_dist)
     ax.set_zlim(-graph_dist, graph_dist)
@@ -135,26 +167,68 @@ def animate_results():
     time_label = ax.text2D(0.05, 0.95, "", transform=ax.transAxes, fontsize=12, color="black")
 
     def update(frame):
-        t = (frame + 1) / animation_splice_factor  # Time starts at t=1
-        time_label.set_text(f"Time: {t}")
 
-        for i, (trail, sphere, label) in enumerate(zip(trails, spheres, labels)):
-            # Get current and trail data
-            x_trail, y_trail, z_trail = subsampled_positions[i, :, :frame]
-            x_current, y_current, z_current = subsampled_positions[i, :, frame - 1]
+        if(tracked_planet_index != -1):
 
-            # Update the trail
-            trail.set_data(x_trail, y_trail)
-            trail.set_3d_properties(z_trail)
+            #if tracking
 
-            # Update the sphere
-            sphere._offsets3d = ([x_current], [y_current], [z_current])
+            t = (frame + 1) / animation_splice_factor  # Time starts at t=1
+            time_label.set_text(f"Time: {t}")
 
-            # Update the label
-            label.set_position((x_current, y_current))
-            label.set_3d_properties(z_current)
-            label.set_text(f"{masses[i]:.2e} M☉")
-        return trails + spheres + labels + [time_label]
+            #graph_dist = run.largest_dist * 1.1
+
+            x_current, y_current, z_current = subsampled_positions[tracked_planet_index, :, frame]
+            #print(x_current, y_current, z_current)
+            ax.set_xlim(x_current - graph_dist / 10, x_current + graph_dist / 10)
+            ax.set_ylim(y_current - graph_dist / 10, y_current + graph_dist / 10)
+            ax.set_zlim(z_current - graph_dist / 10, z_current + graph_dist / 10)
+            ax.set_aspect('auto')
+
+            for i, (trail, sphere, label) in enumerate(zip(trails, spheres, labels)):
+                # Get current and trail data
+                x_trail, y_trail, z_trail = subsampled_positions[i, :, :frame]
+                x_current, y_current, z_current = subsampled_positions[i, :, frame - 1]
+
+                # Update the trail
+                trail.set_data(x_trail, y_trail)
+                trail.set_3d_properties(z_trail)
+
+                # Update the sphere
+                sphere._offsets3d = ([x_current], [y_current], [z_current])
+
+                # Update the label
+                label.set_position((x_current, y_current))
+                label.set_3d_properties(z_current)
+                label.set_text(f"{masses[i]:.2e} M☉")
+            return trails + spheres + labels + [time_label]
+        
+        else:
+            # ax.set_xlim(-graph_dist, graph_dist)
+            # ax.set_ylim(-graph_dist, graph_dist)
+            # ax.set_zlim(-graph_dist, graph_dist)
+            # ax.set_aspect('auto')
+
+            # if not tracking
+            t = (frame + 1) / animation_splice_factor  # Time starts at t=1
+            time_label.set_text(f"Time: {t}")
+
+            for i, (trail, sphere, label) in enumerate(zip(trails, spheres, labels)):
+                # Get current and trail data
+                x_trail, y_trail, z_trail = subsampled_positions[i, :, :frame]
+                x_current, y_current, z_current = subsampled_positions[i, :, frame - 1]
+
+                # Update the trail
+                trail.set_data(x_trail, y_trail)
+                trail.set_3d_properties(z_trail)
+
+                # Update the sphere
+                sphere._offsets3d = ([x_current], [y_current], [z_current])
+
+                # Update the label
+                label.set_position((x_current, y_current))
+                label.set_3d_properties(z_current)
+                label.set_text(f"{masses[i]:.2e} M☉")
+            return trails + spheres + labels + [time_label]
 
     # Create the animation
     ani = FuncAnimation(fig, update, frames=num_frames, interval=animation_interval, blit=False)
@@ -321,6 +395,7 @@ title_label.pack(pady=10)
 # Matplotlib figure for the right frame
 fig = plt.figure(figsize=(6, 3.65))  # Smaller size for the plot
 ax = fig.add_subplot(111, projection='3d')
+#fig.dpi = 500
 #ax.set_facecolor("#d3d3d3")
 #ax.set_title("Simulation Space")
 canvas = FigureCanvasTkAgg(fig, master=right_scrollable_frame)
@@ -385,8 +460,14 @@ animation_settings_entry.pack(pady=5)
 animation_settings_button = ctk.CTkButton(left_scrollable_frame, text="Confirm Animation Settings", command=change_frame_rate, fg_color="#5DB996", text_color="black")
 animation_settings_button.pack(pady=10)
 
+track_button = ctk.CTkButton(left_scrollable_frame, text="Track Planet in Animation", command=toggle_track_planet, fg_color="#FFD700", text_color="black")
+track_button.pack(pady=10)
+
 reset_button = ctk.CTkButton(left_scrollable_frame, text="Reset Simulation", command=reset_simulation_method, fg_color="#D6CFB4", text_color="black")
 reset_button.pack(pady=10)
+
+quit_button = ctk.CTkButton(left_scrollable_frame, text="Quit", command=root.destroy, fg_color="#FF6666", text_color="white")
+quit_button.pack(pady=10)
 
 
 # Console output in bottom frame
@@ -402,6 +483,8 @@ plot_button.pack(pady=15, padx=15)
 
 animate_button = ctk.CTkButton(bottom_frame_right, text="Animate Results", command=animate_results, height=60, fg_color="#7776B3", text_color="black")
 animate_button.pack(pady=15, padx=15)
+
+
 
 # Start main loop
 root.mainloop()

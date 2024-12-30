@@ -9,8 +9,10 @@ import ODECalc as ODE
 
 import initial as init
 
+# variables to store the values used by the simulation
 
-_timeStep = 0.001
+_timeStep = 0.0001
+
 duration = 365
 
 t_eval_step = round(duration / _timeStep)
@@ -53,90 +55,78 @@ def run_thing():
         # global run_time_taken
         # run_time_taken = vV.run_time_taken
 
-        #OCB
+        #Basic Orbit Calculation Code
 
         # OCB._simLoop(_timeStep, duration, planetsFinalList)
         # global run_time_taken
         # run_time_taken = OCB.run_time_taken
 
-        #ODE
+        #ODE Method
+
+        # creates list to store the initial conditions for the ODE
 
         ode_positions = []
         ode_velocities = []
         ode_masses = []
 
-        # print("List of Planets: ", planetsFinalList, "\n")
+        # takes the values from the list of planets in initial.py and saves them into these lists
 
         for planet in planetsFinalList:
             ode_positions.append(planet[:3])
             ode_velocities.append(planet[3:6])
             ode_masses.append(planet[6])
 
+        # saves a count for the number of planets in the simulation (equal to the number of masses)
+
         global planet_list_count
         planet_list_count = len(ode_masses)
+
+        # turns everything into a numpy array
 
         ode_positions = np.array(ode_positions)
         ode_velocities = np.array(ode_velocities)
         ode_masses = np.array(ode_masses)
 
-        ##print("Initial Positions: ", ode_positions)
+        # sets the arrays in the ODE code to equal the arrays from this script
 
         ODE.initial_pos = ode_positions
         ODE.initial_vel = ode_velocities
         ODE.masses = ode_masses
 
+        # Finds the largest distance
+
         global largest_dist
 
         largest_dist = ODE.find_largest_distance()
 
+        # Setting up the ODE
         ode_t_span = (0, duration)
+
+        # creating a linspace for the ODE code to use
         ode_t_eval = np.linspace(ode_t_span[0], ode_t_span[1], t_eval_step)
 
+        #uses the simulation function to generate the list of positions
         solutions = ODE.simulate_n_body_gaussian(ode_t_span, _rtol, ode_t_eval)
 
+        #turns the largest_dist to be in terms of the normalized scale factor
         largest_dist *= (1.496e11/ODE.nu)
 
-        #print(solutions)
-
         N = len(ode_masses)
-        # print(N)
-        #print("Solutions Shape: ", solutions.y.shape)
-        # print("\n")
-        # print("Solutions: ", solutions.y, "\n")
-
-        #shape of the solutions are: planet 1: x,y,z,vx,vy,vz, planet 2: x,y,z,vx,vy,vz
 
         global planet_position_data
 
         global planet_velocity_data
 
-        #num_planets = solutions.y.shape[0] // 6
-        timesteps = solutions.y.shape[1]
+        #reshapes the solutions to a Nx3xM array (M for each individual planet, 3 for x,y,z, and M for all the values)
 
-        ##print("Solutions.Y:", solutions.y[:3*N])
-        ##print("Solutions Shape: ", solutions.y[:3*N].shape)
+        planet_position_data = solutions.y[:3*N].reshape((N, 3, -1))
 
-        positions_a = solutions.y[:3*N].reshape((N, 3, -1))
+        planet_velocity_data = solutions.y[3*N:].reshape((N, 3, -1))
 
-        velocities_a = solutions.y[3*N:].reshape((N, 3, -1))
-
-        # data_reshape = solutions.y.reshape(N, 3, timesteps)
-
-        # positions = data_reshape[:, :3, :]
-
-        #planet_position_data = positions.transpose(0, 2, 1)
-        planet_position_data = positions_a
-        planet_velocity_data = velocities_a
-
-        # print(planet_position_data)
-
-        # print("\n")
-
+        #saves the run time
         global run_time_taken
         run_time_taken = ODE.run_time_taken
 
 
 def get_results():
     global planet_position_data
-    #planet_position_data = vV.position_results
-    #planet_position_data = ode2b.planet_position_data
